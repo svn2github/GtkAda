@@ -1,0 +1,56 @@
+prefix = @prefix@
+docdir = $(prefix)/share/doc/gtkada/gtkada_rm
+
+MKDIR = mkdir -p
+CP=cp -p
+INSTALL = @INSTALL@
+INSTALL_DATA = @INSTALL_DATA@
+
+SRC=../../src/*.ads ../../src/opengl/*.ads ../../src/glade/*.ads
+
+gtkada_rm: ps html partial_clean
+
+partial_clean::
+	-$(RM) *.aux *.cp *.cps *.dvi *.fn *.ky *.log *.pg *.toc *.tp *.vr
+	-$(RM) generated.texi generated_menu.texi
+
+ps: gtkada_rm.ps
+gtkada_rm.ps: force
+	./generate_doc.pl ${SRC}
+	echo x | tex gtkada_rm.texi
+	texindex gtkada_rm.cp
+	tex gtkada_rm.texi
+	tex gtkada_rm.texi
+	dvips gtkada_rm.dvi -o gtkada_rm.ps
+
+html: gtkada_rm_toc.html
+gtkada_rm_toc.html:
+	$(MKDIR) gtkada_rm
+	$(CP) gtkada_rm.css gtkada_rm.js gtkada_rm/
+	$(CP) *.png gtkada_rm/
+	${CP} *.jpg gtkada_rm/
+	./generate_html_doc.pl ${SRC}
+
+info: gtkada_rm.info
+gtkada_rm.info: force
+	./generate_doc.pl ${SRC}
+	makeinfo --force -o gtkada_rm.info gtkada_rm.texi
+	makeinfo --force --no-headers --no-split -o gtkada_rm.txt gtkada_rm.texi
+
+install:
+	-$(MKDIR) $(docdir)
+	-for i in *.ps *.texi *.tex *.jpg gtkada_rm/*; \
+	do \
+	  $(INSTALL_DATA) $$i $(docdir); \
+	done
+
+clean:
+	$(RM) *.aux *.cp *.cps *.dvi *.fn *.ky *.log *.pg *.toc *.tp *.vr
+	$(RM) *.ps *.html *.info* *.txt
+	$(RM) generated.texi generated_menu.texi
+	$(RM) -rf gtkada_rm/
+
+distclean: clean
+	-$(RM) Makefile
+
+force:
